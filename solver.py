@@ -58,29 +58,40 @@ def find_number_locations(num, grid):
 
 def find_hidden_singles(grid):
     hidden_singles = {i+1:[] for i in range(9)}
-    for num in range(9):
+    for num in range(1,10):
         for row in range(9):
             possible = list(filter(lambda cell: check_valid(cell, num, grid), [(row,col) for col in range(9)]))
-            if len(possible) == 1:
+            if len(possible) == 1 and possible[0] not in hidden_singles[num]:
                 hidden_singles[num].append(possible[0])
         for col in range(9):
             possible = list(filter(lambda cell: check_valid(cell, num, grid), [(row,col) for row in range(9)]))
-            if len(possible) == 1:
+            if len(possible) == 1 and possible[0] not in hidden_singles[num]:
                 hidden_singles[num].append(possible[0])
         for box_num in range(9):
             possible = list(filter(lambda cell: check_valid(cell, num, grid), get_box_cells(box_num)))
-            if len(possible) == 1:
+            if len(possible) == 1 and possible[0] not in hidden_singles[num]:
                 hidden_singles[num].append(possible[0])
+        hidden_singles[num] = sorted(hidden_singles[num], key=lambda v:v[0])
     return hidden_singles
+
+def find_naked_singles(grid):
+    naked_singles = {i+1:[] for i in range(9)}
+    for row in range(9):
+        for col in range(9):
+            cands = get_candidates((row,col), grid)
+            if len(cands) == 1:
+                naked_singles[cands[0]].append((row,col))
+    return naked_singles
 
 grid = load_grid()
 for line in grid:
     print(line)
 
 print()
-print(check_valid((0,6),1,grid))
-print()
+# print(check_valid((0,6),1,grid))
+# print()
 # for row in range(9):
 #     for col in range(9):
 #         print(get_candidates((row,col),grid))
 print(find_hidden_singles(grid))
+print(find_naked_singles(grid))
