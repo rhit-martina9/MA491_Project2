@@ -15,9 +15,9 @@ def load_grid():
     return grid
 
 def get_row(num, grid):
-    return grid[num-1]
+    return grid[num]
 def get_col(num, grid):
-    return [row[num-1] for row in grid]
+    return [row[num] for row in grid]
 def get_box_num(cell):
     row, col = cell
     return int(row / n)*n + int(col/n)
@@ -99,7 +99,7 @@ def find_hidden_groups(c, grid, candidates=[]):
         all_cells = get_box_cells(box)
         hidden_helper(hidden_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
     return hidden_groups
-def apply_hidden_groups_move(group, group_values, candidates, grid):
+def apply_hidden_groups_move(group, group_values, candidates, grid, changed=[]):
     new_grid = [[col for col in row] for row in grid]
     new_cands = [[col for col in row] for row in candidates]
     int_values = [int(group_values[i]) for i in range(len(group_values))]
@@ -136,30 +136,68 @@ def apply_hidden_groups_move(group, group_values, candidates, grid):
                     new_cands[cell[0]][cell[1]] = [x for x in new_cands[cell[0]][cell[1]] if x not in int_values]
     return new_grid, new_cands
 
-def naked_helper(naked_groups, i, cells, want, all_cells, grid):
-    if len(cells) == want:
-        if cells not in naked_groups:
-            naked_groups.append(cells)
+def naked_helper(naked_groups, i, nums, want, all_cells, grid, found):
+    if i > len(all_cells):
         return
-    if i == len(all_cells):
+    if len(nums) > 0 and nums[-1] in found:
+        naked_helper(naked_groups, i+1,nums[:-1] + [i+1], want, all_cells, grid, found)
         return
-    elif len(grid[all_cells[i][0]][all_cells[i][1]]) != want or (len(cells) > 0 and grid[cells[-1][0]][cells[-1][1]] != grid[all_cells[i][0]][all_cells[i][1]]):
-        naked_helper(naked_groups, i+1,cells, want, all_cells, grid)
+    if len(nums) == want:
+        cells = list(filter(lambda cell: grid[cell[0]][cell[1]] != [] and all([num in nums for num in grid[cell[0]][cell[1]]]),all_cells))
+        if len(cells) == want:
+            key = ''.join([str(num) for num in nums])
+            if key not in naked_groups:
+                naked_groups[key] = []
+            if cells not in naked_groups[key]:
+                naked_groups[key].append(cells)
+        return
     else:
-        naked_helper(naked_groups, i+1,cells + all_cells[i:i+1], want, all_cells, grid)
-        naked_helper(naked_groups, i+1,cells, want, all_cells, grid)
+        naked_helper(naked_groups, i+1,nums + [i+1], want, all_cells, grid, found)
+        naked_helper(naked_groups, i+1,nums, want, all_cells, grid, found)
 def find_naked_groups(c, grid, candidates=[]):
     if candidates == []:
         candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
-    naked_groups = []
+    naked_groups = {}
     for row in range(N):
-        naked_helper(naked_groups, 0, [], c, [(row,col) for col in range(N)], candidates)
-    if c > 1:
-        for col in range(N):
-            naked_helper(naked_groups, 0, [], c, [(row,col) for row in range(N)], candidates)
-        for box in range(N):
-            naked_helper(naked_groups, 0, [], c, get_box_cells(box), candidates)
+        all_cells = [(row,col) for col in range(N)]
+        naked_helper(naked_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
+    for col in range(N):
+        all_cells = [(row,col) for row in range(N)]
+        naked_helper(naked_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
+    for box in range(N):
+        all_cells = get_box_cells(box)
+        naked_helper(naked_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
     return naked_groups
+def apply_naked_groups_move(group, group_values, candidates, grid, changed=[]):
+    new_grid = [[col for col in row] for row in grid]
+    new_cands = [[col for col in row] for row in candidates]
+    int_values = [int(group_values[i]) for i in range(len(group_values))]
+    if len(group) == 1:
+        new_grid[group[0][0]][group[0][1]] = int_values[0]
+        new_cands[group[0][0]][group[0][1]] = []
+        for row in range(N):
+            if int_values[0] in new_cands[row][group[0][1]]:
+                new_cands[row][group[0][1]].remove(int_values[0])
+        for col in range(N):
+            if int_values[0] in new_cands[group[0][0]][col]:
+                new_cands[group[0][0]][col].remove(int_values[0])
+        for cell in get_box_cells(get_box_num(group[0])):
+            if int_values[0] in new_cands[cell[0]][cell[1]]:
+                new_cands[cell[0]][cell[1]].remove(int_values[0])
+    else:
+        if all([1 in get_relation(group[0],g) for g in group]):
+            for col in range(N):
+                if (group[0][0], col) not in group:
+                    new_cands[group[0][0]][col] = [x for x in new_cands[group[0][0]][col] if x not in int_values]
+        if all([2 in get_relation(group[0],g) for g in group]):
+            for row in range(N):
+                if (row, group[0][1]) not in group:
+                    new_cands[row][group[0][1]] = [x for x in new_cands[row][group[0][1]] if x not in int_values]
+        if all([3 in get_relation(group[0],g) for g in group]):
+            for cell in get_box_cells(get_box_num(group[0])):
+                if cell not in group:
+                    new_cands[cell[0]][cell[1]] = [x for x in new_cands[cell[0]][cell[1]] if x not in int_values]
+    return new_grid, new_cands
 
 def isrelated(cell1, cell2):
     return 1 if get_relation(cell1,cell2)!=[] else 0
@@ -179,56 +217,70 @@ def find_xy_wings(grid, candidates=[]):
                         xy_wings.append([cells[i], cells[j], cells[k]])
     return xy_wings
 
-def display_grid():
+def display_grid(grid):
     for line in grid:
         print(line)
     print()
+def display_candidates(candidates, grid):
+    for row in range(N):
+        for col in range(N):
+            cand_str = f"[{''.join([str(num) for num in candidates[row][col]])}]"
+            if cand_str == "[]":
+                cand_str = str(grid[row][col])
+            print("{0:^9s}".format(cand_str), end=" ")
+        print()
 
 grid = load_grid()
 cands = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
-# display_grid()
+display_grid(grid)
+display_candidates(cands, grid)
 
-# for row in range(N):
-#     print([get_candidates((row,col), grid) for col in range(N)])
-
-# print()
+print()
 # print(find_hidden_groups(1,grid))
 # print(find_hidden_groups(2,grid))
 # print(find_hidden_groups(3,grid))
 # print()
-# print(find_naked_groups(1,grid))
-# print(find_naked_groups(2,grid))
-# print(find_naked_groups(3,grid))
+print(find_naked_groups(1,grid))
+print(find_naked_groups(2,grid))
+print(find_naked_groups(3,grid))
 # print()
 
 # wings = find_xy_wings(grid)
 # print(wings)
 # print([[cands[cand[0]][cand[1]] for cand in wing] for wing in wings])
-# print()
 
+
+print()
 new_grid = grid
 new_cands = cands
-# hidden_groups_3 = find_hidden_groups(3,new_grid,new_cands)
-# while hidden_groups_3 != {}:
-#     for num in hidden_groups_3:
-#         for i in range(len(hidden_groups_3[num])):
-#             new_grid, new_cands = apply_hidden_groups_move(hidden_groups_3[num][i], num, new_cands, new_grid)
-#     hidden_groups_3 = find_hidden_groups(1,new_grid)
-# # display_grid()
-# hidden_groups_2 = find_hidden_groups(2,new_grid,new_cands)
-# while hidden_groups_2 != {}:
-#     for num in hidden_groups_2:
-#         for i in range(len(hidden_groups_2[num])):
-#             new_grid, new_cands = apply_hidden_groups_move(hidden_groups_2[num][i], num, new_cands, new_grid)
-#     hidden_groups_2 = find_hidden_groups(1,new_grid)
-# display_grid()
-hidden_groups_1 = find_hidden_groups(1,new_grid,new_cands)
-while hidden_groups_1 != {}:
-    for num in hidden_groups_1:
-        for i in range(len(hidden_groups_1[num])):
-            new_grid, new_cands = apply_hidden_groups_move(hidden_groups_1[num][i], num, new_cands, new_grid)
-    hidden_groups_1 = find_hidden_groups(1,new_grid)
-display_grid()
+
+# naked_groups = find_naked_groups(1,new_grid,new_cands)
+# while naked_groups != {}:
+#     for i in range(1,10):
+#         for num in naked_groups:
+#             for j in range(len(naked_groups[num])):
+#                 new_grid, new_cands = apply_naked_groups_move(naked_groups[num][j], num, new_cands, new_grid)
+#         naked_groups = find_naked_groups((i%9)+1,new_grid,new_cands)
+
+# display_grid(new_grid)
+# display_candidates(new_cands, new_grid)
 # print()
-# print(find_hidden_groups(2,new_grid))
-# print(find_hidden_groups(3,new_grid))
+# print(naked_groups)
+# print(find_hidden_groups(1,new_grid,new_cands))
+# print(find_hidden_groups(2,new_grid,new_cands))
+# print(find_hidden_groups(3,new_grid,new_cands))
+
+hidden_groups = find_hidden_groups(1,new_grid,new_cands)
+while hidden_groups != {}:
+    for i in range(1,10):
+        for num in hidden_groups:
+            for j in range(len(hidden_groups[num])):
+                new_grid, new_cands = apply_hidden_groups_move(hidden_groups[num][j], num, new_cands, new_grid)
+        hidden_groups = find_hidden_groups((i%9)+1,new_grid,new_cands)
+
+display_grid(new_grid)
+display_candidates(new_cands, new_grid)
+print()
+print(find_hidden_groups(1,new_grid,new_cands))
+print(find_hidden_groups(2,new_grid,new_cands))
+print(find_hidden_groups(3,new_grid,new_cands))
