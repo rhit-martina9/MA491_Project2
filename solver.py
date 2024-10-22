@@ -77,10 +77,10 @@ def find_hidden_groups(c, grid):
     candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
     hidden_groups = []
     for row in range(N):
-        all_cells = [(row,col) for col in range(9)]
+        all_cells = [(row,col) for col in range(N)]
         hidden_helper(hidden_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
     for col in range(N):
-        all_cells = [(row,col) for row in range(9)]
+        all_cells = [(row,col) for row in range(N)]
         hidden_helper(hidden_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
     for box in range(N):
         all_cells = get_box_cells(box)
@@ -103,10 +103,10 @@ def find_naked_groups(c, grid):
     candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
     naked_groups = []
     for row in range(N):
-        naked_helper(naked_groups, 0, [], c, [(row,col) for col in range(9)], candidates)
+        naked_helper(naked_groups, 0, [], c, [(row,col) for col in range(N)], candidates)
     if c > 1:
         for col in range(N):
-            naked_helper(naked_groups, 0, [], c, [(row,col) for row in range(9)], candidates)
+            naked_helper(naked_groups, 0, [], c, [(row,col) for row in range(N)], candidates)
         for box in range(N):
             naked_helper(naked_groups, 0, [], c, get_box_cells(box), candidates)
     return naked_groups
@@ -128,6 +128,7 @@ print()
 print(find_hidden_groups(1,grid))
 print(find_hidden_groups(2,grid))
 print(find_hidden_groups(3,grid))
+print()
 print(find_naked_groups(1,grid))
 print(find_naked_groups(2,grid))
 print(find_naked_groups(3,grid))
