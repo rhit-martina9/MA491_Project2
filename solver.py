@@ -99,7 +99,7 @@ def find_hidden_groups(c, grid, candidates=[]):
         all_cells = get_box_cells(box)
         hidden_helper(hidden_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
     return hidden_groups
-def apply_hidden_groups_move(group, group_values, candidates, grid, changed=[]):
+def apply_hidden_groups_move(group, group_values, candidates, grid):
     new_grid = [[col for col in row] for row in grid]
     new_cands = [[col for col in row] for row in candidates]
     int_values = [int(group_values[i]) for i in range(len(group_values))]
@@ -168,7 +168,7 @@ def find_naked_groups(c, grid, candidates=[]):
         all_cells = get_box_cells(box)
         naked_helper(naked_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
     return naked_groups
-def apply_naked_groups_move(group, group_values, candidates, grid, changed=[]):
+def apply_naked_groups_move(group, group_values, candidates, grid):
     new_grid = [[col for col in row] for row in grid]
     new_cands = [[col for col in row] for row in candidates]
     int_values = [int(group_values[i]) for i in range(len(group_values))]
@@ -216,6 +216,8 @@ def find_xy_wings(grid, candidates=[]):
                     if isrelated(cells[i], cells[j])+isrelated(cells[i], cells[k])+isrelated(cells[j], cells[k]) == 2:
                         xy_wings.append([cells[i], cells[j], cells[k]])
     return xy_wings
+def apply_xy_wings(candidates,grid):
+    pass
 
 def display_grid(grid):
     for line in grid:
@@ -254,33 +256,34 @@ print()
 new_grid = grid
 new_cands = cands
 
-# naked_groups = find_naked_groups(1,new_grid,new_cands)
-# while naked_groups != {}:
-#     for i in range(1,10):
-#         for num in naked_groups:
-#             for j in range(len(naked_groups[num])):
-#                 new_grid, new_cands = apply_naked_groups_move(naked_groups[num][j], num, new_cands, new_grid)
-#         naked_groups = find_naked_groups((i%9)+1,new_grid,new_cands)
-
-# display_grid(new_grid)
-# display_candidates(new_cands, new_grid)
-# print()
-# print(naked_groups)
-# print(find_hidden_groups(1,new_grid,new_cands))
-# print(find_hidden_groups(2,new_grid,new_cands))
-# print(find_hidden_groups(3,new_grid,new_cands))
-
-hidden_groups = find_hidden_groups(1,new_grid,new_cands)
-while hidden_groups != {}:
+naked_groups = find_naked_groups(1,new_grid,new_cands)
+count = 1
+while naked_groups != {} or count > 0:
     for i in range(1,10):
-        for num in hidden_groups:
-            for j in range(len(hidden_groups[num])):
-                new_grid, new_cands = apply_hidden_groups_move(hidden_groups[num][j], num, new_cands, new_grid)
-        hidden_groups = find_hidden_groups((i%9)+1,new_grid,new_cands)
+        for num in naked_groups:
+            for j in range(len(naked_groups[num])):
+                new_grid, new_cands = apply_naked_groups_move(naked_groups[num][j], num, new_cands, new_grid)
+        naked_groups = find_naked_groups((i%9)+1,new_grid,new_cands)
+    count -= 1
 
 display_grid(new_grid)
 display_candidates(new_cands, new_grid)
 print()
-print(find_hidden_groups(1,new_grid,new_cands))
-print(find_hidden_groups(2,new_grid,new_cands))
-print(find_hidden_groups(3,new_grid,new_cands))
+print(find_naked_groups(1,new_grid,new_cands))
+print(find_naked_groups(2,new_grid,new_cands))
+print(find_naked_groups(3,new_grid,new_cands))
+
+# hidden_groups = find_hidden_groups(1,new_grid,new_cands)
+# while hidden_groups != {}:
+#     for i in range(1,10):
+#         for num in hidden_groups:
+#             for j in range(len(hidden_groups[num])):
+#                 new_grid, new_cands = apply_hidden_groups_move(hidden_groups[num][j], num, new_cands, new_grid)
+#         hidden_groups = find_hidden_groups((i%9)+1,new_grid,new_cands)
+
+# display_grid(new_grid)
+# display_candidates(new_cands, new_grid)
+# print()
+# print(find_hidden_groups(1,new_grid,new_cands))
+# print(find_hidden_groups(2,new_grid,new_cands))
+# print(find_hidden_groups(3,new_grid,new_cands))
