@@ -16,8 +16,12 @@ def load_grid():
 
 def get_row(num, grid):
     return grid[num]
+def get_row_cells(num, grid):
+    return [(num,col) for col in range(N)]
 def get_col(num, grid):
     return [row[num] for row in grid]
+def get_col_cells(num, grid):
+    return [(row,num) for col in range(N)]
 def get_box_num(cell):
     row, col = cell
     return int(row / n)*n + int(col/n)
@@ -57,7 +61,7 @@ def check_valid(cell, num, grid):
 def get_candidates(cell, grid):
     cands = [i+1 for i in range(N)]
     return list(filter(lambda v: check_valid(cell,v,grid), cands))
-    
+
 def find_number_locations(num, grid):
     locations = []
     for row in range(N):
