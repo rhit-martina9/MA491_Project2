@@ -58,22 +58,34 @@ def find_number_locations(num, grid):
                 continue
     return locations
 
-def find_hidden_singles(grid):
-    hidden_singles = []
-    for num in range(1,10):
-        for row in range(N):
-            possible = list(filter(lambda cell: check_valid(cell, num, grid), [(row,col) for col in range(N)]))
-            if len(possible) == 1 and possible[0] not in hidden_singles:
-                hidden_singles.append(possible[0])
-        for col in range(N):
-            possible = list(filter(lambda cell: check_valid(cell, num, grid), [(row,col) for row in range(N)]))
-            if len(possible) == 1 and possible[0] not in hidden_singles:
-                hidden_singles.append(possible[0])
-        for box_num in range(N):
-            possible = list(filter(lambda cell: check_valid(cell, num, grid), get_box_cells(box_num)))
-            if len(possible) == 1 and possible[0] not in hidden_singles:
-                hidden_singles.append(possible[0])
-    return sorted(hidden_singles, key=lambda v:(v[0],v[1]))
+def hidden_helper(hidden_groups, i, nums, want, all_cells, grid, found):
+    if i > len(all_cells):
+        return
+    if len(nums) > 0 and nums[-1] in found:
+        hidden_helper(hidden_groups, i+1,nums[:-1] + [i+1], want, all_cells, grid, found)
+        return
+    if len(nums) == want:
+        # print(nums)
+        cells = list(filter(lambda cell: any([num in grid[cell[0]][cell[1]] for num in nums]),all_cells))
+        if len(cells) == want and cells not in hidden_groups:
+            hidden_groups.append(cells)
+        return
+    else:
+        hidden_helper(hidden_groups, i+1,nums + [i+1], want, all_cells, grid, found)
+        hidden_helper(hidden_groups, i+1,nums, want, all_cells, grid, found)
+def find_hidden_groups(c, grid):
+    candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
+    hidden_groups = []
+    for row in range(N):
+        all_cells = [(row,col) for col in range(9)]
+        hidden_helper(hidden_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
+    for col in range(N):
+        all_cells = [(row,col) for row in range(9)]
+        hidden_helper(hidden_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
+    for box in range(N):
+        all_cells = get_box_cells(box)
+        hidden_helper(hidden_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
+    return hidden_groups
 
 def naked_helper(naked_groups, i, cells, want, all_cells, grid):
     if len(cells) == want:
@@ -87,7 +99,6 @@ def naked_helper(naked_groups, i, cells, want, all_cells, grid):
     else:
         naked_helper(naked_groups, i+1,cells + all_cells[i:i+1], want, all_cells, grid)
         naked_helper(naked_groups, i+1,cells, want, all_cells, grid)
-
 def find_naked_groups(c, grid):
     candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
     naked_groups = []
@@ -104,13 +115,19 @@ grid = load_grid()
 for line in grid:
     print(line)
 
+# print()
+# for row in range(N):
+#     print([get_candidates((row,col), grid) for col in range(N)])
+
 print()
 # print(check_valid((0,6),1,grid))
 # print()
 # for row in range(N):
 #     for col in range(N):
 #         print(get_candidates((row,col),grid))
-print(find_hidden_singles(grid))
+print(find_hidden_groups(1,grid))
+print(find_hidden_groups(2,grid))
+print(find_hidden_groups(3,grid))
 print(find_naked_groups(1,grid))
 print(find_naked_groups(2,grid))
 print(find_naked_groups(3,grid))
