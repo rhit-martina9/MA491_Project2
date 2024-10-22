@@ -111,6 +111,27 @@ def find_naked_groups(c, grid):
             naked_helper(naked_groups, 0, [], c, get_box_cells(box), candidates)
     return naked_groups
 
+def find_xy_wings(grid):
+    candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
+    xy_wings = []
+    for row1 in range(N):
+        for row2 in range(row1+1,N):
+            for col1 in range(N):
+                if len(candidates[row1][col1]) != 2:
+                    continue
+                for col2 in range(N):
+                    if len(candidates[row2][col2]) != 2:
+                        continue
+                    if len(candidates[row1][col2]) == 2:
+                        combined = sorted(candidates[row1][col1] + candidates[row2][col2] + candidates[row1][col2])
+                        if combined[0] == combined[1] and combined[2] == combined[3] and combined[4] == combined[5]:
+                            xy_wings.append([(row1,col1),(row2,col2),(row1,col2)])
+                    if len(candidates[row2][col1]) == 2:
+                        combined = sorted(candidates[row1][col1] + candidates[row2][col2] + candidates[row2][col1])
+                        if combined[0] == combined[1] and combined[2] == combined[3] and combined[4] == combined[5]:
+                            xy_wings.append([(row1,col1),(row2,col2),(row2,col1)])
+    return xy_wings
+
 grid = load_grid()
 for line in grid:
     print(line)
@@ -132,3 +153,5 @@ print()
 print(find_naked_groups(1,grid))
 print(find_naked_groups(2,grid))
 print(find_naked_groups(3,grid))
+print()
+print(find_xy_wings(grid))
