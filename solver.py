@@ -214,10 +214,23 @@ def find_xy_wings(grid, candidates=[]):
                 combined = sorted(candidates[cells[i][0]][cells[i][1]] + candidates[cells[j][0]][cells[j][1]] + candidates[cells[k][0]][cells[k][1]])
                 if combined[0] == combined[1] and combined[2] == combined[3] and combined[4] == combined[5]:
                     if isrelated(cells[i], cells[j])+isrelated(cells[i], cells[k])+isrelated(cells[j], cells[k]) == 2:
-                        xy_wings.append([cells[i], cells[j], cells[k]])
+                        if isrelated(cells[i],cells[j])+isrelated(cells[i], cells[k]) == 2:
+                            xy_wings.append([cells[i], cells[j], cells[k]])
+                        elif isrelated(cells[i],cells[j])+isrelated(cells[j], cells[k]) == 2:
+                            xy_wings.append([cells[j], cells[i], cells[k]])
+                        else:
+                            xy_wings.append([cells[k], cells[i], cells[j]])
     return xy_wings
-def apply_xy_wings(candidates,grid):
-    pass
+def apply_xy_wings(group, candidates):
+    new_cands = [[col for col in row] for row in candidates]
+    shared = [c for c in new_cands[group[1][0]][group[1][1]] if c in new_cands[group[2][0]][group[2][1]]][0]
+    for cell in [(row,col) for col in range(9) for row in range(9)]:
+        if cell in group or isrelated(cell,group[1])==0 or isrelated(cell,group[2])==0:
+            continue
+        if shared in new_cands[cell[0]][cell[1]]:
+            new_cands[cell[0]][cell[1]].remove(shared)
+    return new_cands
+
 
 def display_grid(grid):
     for line in grid:
@@ -247,31 +260,31 @@ print(find_naked_groups(2,grid))
 print(find_naked_groups(3,grid))
 # print()
 
-# wings = find_xy_wings(grid)
-# print(wings)
-# print([[cands[cand[0]][cand[1]] for cand in wing] for wing in wings])
+wings = find_xy_wings(grid)
+print(wings)
+print([[cands[cand[0]][cand[1]] for cand in wing] for wing in wings])
 
 
 print()
 new_grid = grid
 new_cands = cands
 
-naked_groups = find_naked_groups(1,new_grid,new_cands)
-count = 1
-while naked_groups != {} or count > 0:
-    for i in range(1,10):
-        for num in naked_groups:
-            for j in range(len(naked_groups[num])):
-                new_grid, new_cands = apply_naked_groups_move(naked_groups[num][j], num, new_cands, new_grid)
-        naked_groups = find_naked_groups((i%9)+1,new_grid,new_cands)
-    count -= 1
+# naked_groups = find_naked_groups(1,new_grid,new_cands)
+# count = 1
+# while naked_groups != {} or count > 0:
+#     for i in range(1,10):
+#         for num in naked_groups:
+#             for j in range(len(naked_groups[num])):
+#                 new_grid, new_cands = apply_naked_groups_move(naked_groups[num][j], num, new_cands, new_grid)
+#         naked_groups = find_naked_groups((i%9)+1,new_grid,new_cands)
+#     count -= 1
 
-display_grid(new_grid)
-display_candidates(new_cands, new_grid)
-print()
-print(find_naked_groups(1,new_grid,new_cands))
-print(find_naked_groups(2,new_grid,new_cands))
-print(find_naked_groups(3,new_grid,new_cands))
+# display_grid(new_grid)
+# display_candidates(new_cands, new_grid)
+# print()
+# print(find_naked_groups(1,new_grid,new_cands))
+# print(find_naked_groups(2,new_grid,new_cands))
+# print(find_naked_groups(3,new_grid,new_cands))
 
 # hidden_groups = find_hidden_groups(1,new_grid,new_cands)
 # while hidden_groups != {}:
@@ -287,3 +300,15 @@ print(find_naked_groups(3,new_grid,new_cands))
 # print(find_hidden_groups(1,new_grid,new_cands))
 # print(find_hidden_groups(2,new_grid,new_cands))
 # print(find_hidden_groups(3,new_grid,new_cands))
+
+xy_wings = find_xy_wings(new_grid,new_cands)
+count = 1
+for wing in xy_wings:
+    new_cands = apply_xy_wings(wing, new_cands)
+xy_wings = find_xy_wings(new_grid,new_cands)
+count -= 1
+
+display_grid(new_grid)
+display_candidates(new_cands, new_grid)
+print()
+print(find_xy_wings(new_grid,new_cands))
