@@ -111,25 +111,27 @@ def find_naked_groups(c, grid):
             naked_helper(naked_groups, 0, [], c, get_box_cells(box), candidates)
     return naked_groups
 
+def isrelated(cell1, cell2):
+    if cell1[0] == cell2[0]:
+        return 1
+    if cell1[1] == cell2[1]:
+        return 1
+    if get_box_num(cell1) == get_box_num(cell2):
+        return 1
+    return 0
 def find_xy_wings(grid):
     candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
     xy_wings = []
-    for row1 in range(N):
-        for row2 in range(row1+1,N):
-            for col1 in range(N):
-                if len(candidates[row1][col1]) != 2:
+    cells = [(r,c) for c in range(N) for r in range(N)]
+    for i in range(N*N):
+        for j in range(i+1,N*N):
+            for k in range(j+1,N*N):
+                if len(candidates[cells[i][0]][cells[i][1]]) != 2 or len(candidates[cells[j][0]][cells[j][1]]) != 2 or len(candidates[cells[k][0]][cells[k][1]]) != 2:
                     continue
-                for col2 in range(N):
-                    if len(candidates[row2][col2]) != 2:
-                        continue
-                    if len(candidates[row1][col2]) == 2:
-                        combined = sorted(candidates[row1][col1] + candidates[row2][col2] + candidates[row1][col2])
-                        if combined[0] == combined[1] and combined[2] == combined[3] and combined[4] == combined[5]:
-                            xy_wings.append([(row1,col1),(row2,col2),(row1,col2)])
-                    if len(candidates[row2][col1]) == 2:
-                        combined = sorted(candidates[row1][col1] + candidates[row2][col2] + candidates[row2][col1])
-                        if combined[0] == combined[1] and combined[2] == combined[3] and combined[4] == combined[5]:
-                            xy_wings.append([(row1,col1),(row2,col2),(row2,col1)])
+                combined = sorted(candidates[cells[i][0]][cells[i][1]] + candidates[cells[j][0]][cells[j][1]] + candidates[cells[k][0]][cells[k][1]])
+                if combined[0] == combined[1] and combined[2] == combined[3] and combined[4] == combined[5]:
+                    if isrelated(cells[i], cells[j])+isrelated(cells[i], cells[k])+isrelated(cells[j], cells[k]) == 2:
+                        xy_wings.append([cells[i], cells[j], cells[k]])
     return xy_wings
 
 grid = load_grid()
@@ -154,4 +156,11 @@ print(find_naked_groups(1,grid))
 print(find_naked_groups(2,grid))
 print(find_naked_groups(3,grid))
 print()
-print(find_xy_wings(grid))
+
+wings = find_xy_wings(grid)
+print(wings)
+cands = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
+print([[cands[cand[0]][cand[1]] for cand in wing] for wing in wings])
+print(isrelated((1,1),(1,4)) + isrelated((1,1),(4,1)) + isrelated((1,4),(4,1)))
+print(isrelated((1,1),(1,4)) + isrelated((2,0),(1,4)) + isrelated((1,1),(2,0)))
+print(isrelated((1,1),(4,2)) + isrelated((2,0),(4,2)) + isrelated((1,1),(2,0)))
