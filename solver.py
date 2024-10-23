@@ -1,4 +1,5 @@
 import copy
+import math
 n = 3
 N = n*n
 
@@ -16,12 +17,12 @@ def load_grid():
 
 def get_row(num, grid):
     return grid[num]
-def get_row_cells(num, grid):
+def get_row_cells(num):
     return [(num,col) for col in range(N)]
 def get_col(num, grid):
     return [row[num] for row in grid]
-def get_col_cells(num, grid):
-    return [(row,num) for col in range(N)]
+def get_col_cells(num):
+    return [(row,num) for row in range(N)]
 def get_box_num(cell):
     row, col = cell
     return int(row / n)*n + int(col/n)
@@ -89,6 +90,7 @@ def hidden_helper(hidden_groups, i, nums, want, all_cells, grid, found):
     else:
         hidden_helper(hidden_groups, i+1,nums + [i+1], want, all_cells, grid, found)
         hidden_helper(hidden_groups, i+1,nums, want, all_cells, grid, found)
+
 def find_hidden_groups(c, grid, candidates=[]):
     if candidates == []:
         candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
@@ -103,6 +105,7 @@ def find_hidden_groups(c, grid, candidates=[]):
         all_cells = get_box_cells(box)
         hidden_helper(hidden_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
     return hidden_groups
+
 def apply_hidden_groups_move(group, group_values, candidates, grid):
     new_grid = [[col for col in row] for row in grid]
     new_cands = [[col for col in row] for row in candidates]
@@ -158,6 +161,7 @@ def naked_helper(naked_groups, i, nums, want, all_cells, grid, found):
     else:
         naked_helper(naked_groups, i+1,nums + [i+1], want, all_cells, grid, found)
         naked_helper(naked_groups, i+1,nums, want, all_cells, grid, found)
+
 def find_naked_groups(c, grid, candidates=[]):
     if candidates == []:
         candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
@@ -172,6 +176,7 @@ def find_naked_groups(c, grid, candidates=[]):
         all_cells = get_box_cells(box)
         naked_helper(naked_groups, 0, [], c, all_cells, candidates, [grid[cell[0]][cell[1]] for cell in all_cells])
     return naked_groups
+
 def apply_naked_groups_move(group, group_values, candidates, grid):
     new_grid = [[col for col in row] for row in grid]
     new_cands = [[col for col in row] for row in candidates]
@@ -205,6 +210,7 @@ def apply_naked_groups_move(group, group_values, candidates, grid):
 
 def isrelated(cell1, cell2):
     return 1 if get_relation(cell1,cell2)!=[] else 0
+
 def find_xy_wings(grid, candidates=[]):
     if candidates == []:
         candidates = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
@@ -225,6 +231,7 @@ def find_xy_wings(grid, candidates=[]):
                         else:
                             xy_wings.append([cells[k], cells[i], cells[j]])
     return xy_wings
+
 def apply_xy_wings(group, candidates):
     new_cands = [[col for col in row] for row in candidates]
     shared = [c for c in new_cands[group[1][0]][group[1][1]] if c in new_cands[group[2][0]][group[2][1]]][0]
@@ -235,11 +242,11 @@ def apply_xy_wings(group, candidates):
             new_cands[cell[0]][cell[1]].remove(shared)
     return new_cands
 
-
 def display_grid(grid):
     for line in grid:
         print(line)
     print()
+
 def display_candidates(candidates, grid):
     for row in range(N):
         for col in range(N):
@@ -248,6 +255,68 @@ def display_candidates(candidates, grid):
                 cand_str = str(grid[row][col])
             print("{0:^9s}".format(cand_str), end=" ")
         print()
+
+def group_empty_squares(grid, group):
+    num_empty = 0
+    for cell in group:
+        if grid[cell[0]][cell[1]] == 0:
+            num_empty += 1
+    return num_empty
+
+def count_possible_xy_wings(grid):
+    xy_wings = 0
+    cells = [(r,c) for c in range(N) for r in range(N)]
+    for i in range(N*N):
+        if grid[cells[i][0]][cells[i][1]] > 0:
+            continue
+        for j in range(i+1,N*N):
+            if grid[cells[j][0]][cells[j][1]] > 0:
+                continue
+            for k in range(j+1,N*N):
+                if grid[cells[k][0]][cells[k][1]] == 0:
+                    xy_wings += 1
+    return xy_wings
+
+def perform_calculation(grid, cands):
+    for i in range(1, 9):
+        groups = find_hidden_groups(i, grid, cands)
+        num_candidates = 0
+        if groups != {}:
+            for k in range(9):
+                num_empty_row = group_empty_squares(grid, get_row_cells(k))
+                num_empty_col = group_empty_squares(grid, get_col_cells(k))
+                num_empty_box = group_empty_squares(grid, get_box_cells(k))
+                fac = math.factorial
+                num_candidates += fac(num_empty_row)/(fac(num_empty_row - k) * fac(k)) + fac(num_empty_col)/(fac(num_empty_col - k) * fac(k)) + fac(num_empty_box)/(fac(num_empty_box - k) * fac(k))
+            num_valid = 0
+            for key in groups.keys:
+                num_valid += len(groups[key])
+            new_grid, new_cands = apply_hidden_groups_move(groups[groups.keys[0]][0], groups.keys[0], cands, grid)
+            return perform_calculation(new_grid, new_cands) + num_candidates/num_valid*3
+        
+        groups = find_naked_groups(i, grid, cands)
+        if groups != {}:
+            for k in range(9):
+                num_empty_row = group_empty_squares(grid, get_row_cells(k))
+                num_empty_col = group_empty_squares(grid, get_col_cells(k))
+                num_empty_box = group_empty_squares(grid, get_box_cells(k))
+                fac = math.factorial
+                num_candidates += fac(num_empty_row)/(fac(num_empty_row - k) * fac(k)) + fac(num_empty_col)/(fac(num_empty_col - k) * fac(k)) + fac(num_empty_box)/(fac(num_empty_box - k) * fac(k))
+            num_valid = 0
+            for key in groups.keys:
+                num_valid += len(groups[key])
+            new_grid, new_cands = apply_hidden_groups_move(groups[groups.keys[0]][0], groups.keys[0], cands, grid)
+            return perform_calculation(new_grid, new_cands) + num_candidates/num_valid*i
+
+    wings = find_xy_wings(grid, cands)
+    num_valid_wings = len(wings)
+    num_possible_wings = count_possible_xy_wings(grid)
+    if wings != {}:
+        new_cands = apply_xy_wings(wings[0], cands)
+        return perform_calculation(grid, new_cands) + num_possible_wings/num_valid_wings*3
+
+
+
 
 grid = load_grid()
 cands = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
@@ -316,3 +385,4 @@ display_grid(new_grid)
 display_candidates(new_cands, new_grid)
 print()
 print(find_xy_wings(new_grid,new_cands))
+
