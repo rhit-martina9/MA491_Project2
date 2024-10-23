@@ -11,9 +11,10 @@ def load_grid(filename):
     grid = []
     with open(filename) as file:
         for line in file:
-            grid.append(line.replace("\n","").split(" "))
+            new_line = line.replace("\n","").split("\t")
+            grid.append([0 for _ in range(N-len(new_line))] + new_line)
             for i in range(N):
-                if grid[-1][i] == 'X':
+                if grid[-1][i] == '':
                     grid[-1][i] = 0
                 else:
                     grid[-1][i] = int(grid[-1][i])
