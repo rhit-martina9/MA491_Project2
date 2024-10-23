@@ -304,40 +304,43 @@ def find_xy_wings_cells(grid):
     return xy_wings
 
 def perform_calculation(grid, cands):
+    complexity = 0
     for count in range(1, 9):
         groups = find_hidden_groups(count, grid, cands)
         num_candidates = 0
+        for k in range(9):
+            num_empty_row = group_empty_squares(grid, get_row_cells(k))
+            num_empty_col = group_empty_squares(grid, get_col_cells(k))
+            num_empty_box = group_empty_squares(grid, get_box_cells(k))
+            num_candidates += math.comb(num_empty_row,k) + math.comb(num_empty_col,k) + math.comb(num_empty_box,k)
         if groups != {}:
-            for k in range(9):
-                num_empty_row = group_empty_squares(grid, get_row_cells(k))
-                num_empty_col = group_empty_squares(grid, get_col_cells(k))
-                num_empty_box = group_empty_squares(grid, get_box_cells(k))
-                num_candidates += math.comb(num_empty_row,k) + math.comb(num_empty_col,k) + math.comb(num_empty_box,k)
             num_valid = 0
             for key in groups.keys:
                 num_valid += len(groups[key])
             new_grid, new_cands = apply_hidden_groups_move(groups[groups.keys[0]][0], groups.keys[0], cands, grid)
-            return perform_calculation(new_grid, new_cands) + num_candidates/num_valid*3
+            return perform_calculation(new_grid, new_cands) + num_candidates/num_valid*3 + complexity
+        complexity += num_candidates
         
         groups = find_naked_groups(count, grid, cands)
+        for k in range(9):
+            num_empty_row = group_empty_squares(grid, get_row_cells(k))
+            num_empty_col = group_empty_squares(grid, get_col_cells(k))
+            num_empty_box = group_empty_squares(grid, get_box_cells(k))
+            num_candidates += math.comb(num_empty_row,k) + math.comb(num_empty_col,k) + math.comb(num_empty_box,k)
         if groups != {}:
-            for k in range(9):
-                num_empty_row = group_empty_squares(grid, get_row_cells(k))
-                num_empty_col = group_empty_squares(grid, get_col_cells(k))
-                num_empty_box = group_empty_squares(grid, get_box_cells(k))
-                num_candidates += math.comb(num_empty_row,k) + math.comb(num_empty_col,k) + math.comb(num_empty_box,k)
             num_valid = 0
             for key in groups.keys:
                 num_valid += len(groups[key])
             new_grid, new_cands = apply_hidden_groups_move(groups[groups.keys[0]][0], groups.keys[0], cands, grid)
-            return perform_calculation(new_grid, new_cands) + num_candidates/num_valid*i
+            return perform_calculation(new_grid, new_cands) + num_candidates/num_valid*count + complexity
+        complexity += num_candidates
 
     wings = find_xy_wings(grid, cands)
     num_valid_wings = len(wings)
     num_possible_wings = len(find_xy_wings_cells(grid))
     if wings != {}:
         new_cands = apply_xy_wings(wings[0], cands)
-        return perform_calculation(grid, new_cands) + num_possible_wings/num_valid_wings*3
+        return perform_calculation(grid, new_cands) + num_possible_wings/num_valid_wings*3 + complexity
 
 
 
