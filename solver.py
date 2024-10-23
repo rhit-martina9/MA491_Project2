@@ -1,11 +1,15 @@
-import copy
+import sys
 import math
 n = 3
 N = n*n
 
-def load_grid():
+def load_grid(filename):
+    if len(filename) == 1:
+        filename = "grid.txt"
+    else:
+        filename = filename[1]
     grid = []
-    with open("grid.txt") as file:
+    with open(filename) as file:
         for line in file:
             grid.append(line.replace("\n","").split(" "))
             for i in range(N):
@@ -304,9 +308,14 @@ def find_xy_wings_cells(grid):
     return xy_wings
 
 def perform_calculation(grid, cands):
+    if is_solved(grid):
+        print()
+        display_grid(grid)
+        return 0
     complexity = 0
     for count in range(1, 9):
         groups = find_hidden_groups(count, grid, cands)
+        group_keys = list(groups.keys())
         num_candidates = 0
         for k in range(9):
             num_empty_row = group_empty_squares(grid, get_row_cells(k))
@@ -315,13 +324,14 @@ def perform_calculation(grid, cands):
             num_candidates += math.comb(num_empty_row,k) + math.comb(num_empty_col,k) + math.comb(num_empty_box,k)
         if groups != {}:
             num_valid = 0
-            for key in groups.keys:
+            for key in groups:
                 num_valid += len(groups[key])
-            new_grid, new_cands = apply_hidden_groups_move(groups[groups.keys[0]][0], groups.keys[0], cands, grid)
+            new_grid, new_cands = apply_hidden_groups_move(groups[group_keys[0]][0], group_keys[0], cands, grid)
             return perform_calculation(new_grid, new_cands) + num_candidates/num_valid*3 + complexity
         complexity += num_candidates
         
         groups = find_naked_groups(count, grid, cands)
+        group_keys = list(groups.keys())
         for k in range(9):
             num_empty_row = group_empty_squares(grid, get_row_cells(k))
             num_empty_col = group_empty_squares(grid, get_col_cells(k))
@@ -329,27 +339,33 @@ def perform_calculation(grid, cands):
             num_candidates += math.comb(num_empty_row,k) + math.comb(num_empty_col,k) + math.comb(num_empty_box,k)
         if groups != {}:
             num_valid = 0
-            for key in groups.keys:
+            for key in groups:
                 num_valid += len(groups[key])
-            new_grid, new_cands = apply_hidden_groups_move(groups[groups.keys[0]][0], groups.keys[0], cands, grid)
+            new_grid, new_cands = apply_hidden_groups_move(groups[group_keys[0]][0], group_keys[0], cands, grid)
             return perform_calculation(new_grid, new_cands) + num_candidates/num_valid*count + complexity
         complexity += num_candidates
 
     wings = find_xy_wings(grid, cands)
     num_valid_wings = len(wings)
     num_possible_wings = len(find_xy_wings_cells(grid))
-    if wings != {}:
+    if wings != []:
         new_cands = apply_xy_wings(wings[0], cands)
         return perform_calculation(grid, new_cands) + num_possible_wings/num_valid_wings*3 + complexity
+    
+    print()
+    display_grid(grid)
+    display_candidates(cands, grid)
+    return -100000000
 
-
-
-
-grid = load_grid()
+grid = load_grid(sys.argv)
 cands = [[get_candidates((row,col),grid) for col in range(N)] for row in range(N)]
 display_grid(grid)
 display_candidates(cands, grid)
-print(perform_calculation(grid, cands))
+complexity = perform_calculation(grid, cands)
+if complexity < 0:
+    print("Unsolved")
+else:
+    print(f"Complexity: {complexity}")
 
 # print()
 # print(find_hidden_groups(1,grid))
