@@ -5,7 +5,7 @@ N = n*n
 
 def load_grid(filename):
     if len(filename) == 1:
-        filename = "grid.txt"
+        filename = "puzzles/grid.txt"
     else:
         filename = filename[1]
     grid = []
@@ -279,6 +279,14 @@ def display_candidates(candidates, grid):
                 cand_str = str(grid[row][col])
             print("{0:^9s}".format(cand_str), end=" ")
         print()
+    print(f"\n{num_candidates(candidates)}")
+
+def num_candidates(candidates):
+    count = 0
+    for row in range(N):
+        for col in range(N):
+            count += len(candidates[row][col])
+    return count
 
 def group_empty_squares(grid, group):
     num_empty = 0
